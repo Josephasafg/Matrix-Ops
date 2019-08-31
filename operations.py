@@ -1,5 +1,11 @@
 import numpy as np
 
+identity_mat = np.array([[1, 0, 0, 0, 0],
+                         [0, 1, 0, 0, 0],
+                         [0, 0, 1, 0, 0],
+                         [0, 0, 0, 1, 0],
+                         [0, 0, 0, 0, 1]], dtype=np.float64)
+
 
 def copy_matrix(matrix):
     return np.copy(matrix)
@@ -51,72 +57,79 @@ def adjoint_matrix(matrix):
     return np.transpose(adj_mat)  #: TODO: write transpose function
 
 
+def validate_inverse(matrix_a, matrix_b):
+    validate_mat = np.matmul(matrix_a, matrix_b)
+    validate_mat = np.around(validate_mat, decimals=0)
+    return np.equal(validate_mat, identity_mat)
+
+
 def inverse(matrix):
-    pass
+    work_matrix = matrix.copy()
+    identity_mat_c = identity_mat.copy()
+    n = len(work_matrix)
 
+    fd = 0  # fd stands for focus diagonal OR the current diagonal
+    fdScaler = 1. / work_matrix[fd][fd]
 
-# mat = np.array([[3, -2, 4],
-#                 [2, -4, 5],
-#                 [1, 8, 2]], dtype=np.float64)
+    for j in range(n):  # using j to indicate cycling thru columns
+        work_matrix[fd][j] = fdScaler * work_matrix[fd][j]
+        identity_mat_c[fd][j] = fdScaler * identity_mat_c[fd][j]
 
-A = np.array([[5, 4, 3, 2, 1], [4, 3, 2, 1, 5], [3, 2, 9, 5, 4], [2, 1, 5, 4, 3], [1, 2, 3, 4, 5]], dtype=np.float64)
-I = np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [0, 0, 0, 0, 1]], dtype=np.float64)
+    work_matrix = np.around(work_matrix, decimals=3)
+    identity_mat_c = np.around(identity_mat_c, decimals=3)
 
-AM = A.copy()
-IM = I.copy()
-n = len(AM)
+    n = len(matrix)
+    indices = list(range(n))
 
-fd = 0  # fd stands for focus diagonal OR the current diagonal
-fdScaler = 1. / AM[fd][fd]
-
-for j in range(n):  # using j to indicate cycling thru columns
-    AM[fd][j] = fdScaler * AM[fd][j]
-    IM[fd][j] = fdScaler * IM[fd][j]
-
-AM = np.around(AM, decimals=3)
-IM = np.around(IM, decimals=3)
-
-n = len(A)
-indices = list(range(n))
-
-for i in indices[0:fd] + indices[fd + 1:]:  # *** skip row with fd in it.
-    crScaler = AM[i][fd]  # cr stands for "current row".
-    for j in range(n):  # cr - crScaler * fdRow, but one element at a time.
-        AM[i][j] = AM[i][j] - crScaler * AM[fd][j]
-        IM[i][j] = IM[i][j] - crScaler * IM[fd][j]
-AM = np.around(AM, decimals=3)
-IM = np.around(IM, decimals=3)
-
-indices = list(range(n))  # to allow flexible row referencing ***
-# We've already run for fd = 0, now let's run for fd = 1 to the last fd
-for fd in range(1, n):  # fd stands for focus diagonal
-    fdScaler = 1.0 / AM[fd][fd]
-    # FIRST: scale fd row with fd inverse.
-    for j in range(n):  # Use j to indicate column looping.
-        AM[fd][j] *= fdScaler
-        IM[fd][j] *= fdScaler
-
-    IM[IM == 0] = 0
-    AM[AM == 0] = 0
-    AM = np.around(AM, decimals=3)
-    IM = np.around(IM, decimals=3)
-    # SECOND: operate on all rows except fd row.
-    for i in indices[:fd] + indices[fd + 1:]:  # *** skip row with fd in it.
-        crScaler = AM[i][fd]  # cr stands for "current row".
+    for i in indices[0:fd] + indices[fd + 1:]:  # *** skip row with fd in it.
+        crScaler = work_matrix[i][fd]  # cr stands for "current row".
         for j in range(n):  # cr - crScaler * fdRow, but one element at a time.
-            AM[i][j] = AM[i][j] - crScaler * AM[fd][j]
-            IM[i][j] = IM[i][j] - crScaler * IM[fd][j]
+            work_matrix[i][j] = work_matrix[i][j] - crScaler * work_matrix[fd][j]
+            identity_mat_c[i][j] = identity_mat_c[i][j] - crScaler * identity_mat_c[fd][j]
+    work_matrix = np.around(work_matrix, decimals=3)
+    identity_mat_c = np.around(identity_mat_c, decimals=3)
 
-        IM[IM == 0] = 0
-        AM[AM == 0] = 0
-        AM = np.around(AM, decimals=3)
-        IM = np.around(IM, decimals=3)
+    indices = list(range(n))  # to allow flexible row referencing ***
+    # We've already run for fd = 0, now let's run for fd = 1 to the last fd
+    for fd in range(1, n):  # fd stands for focus diagonal
+        fdScaler = 1.0 / work_matrix[fd][fd]
+        # Fidentity_matRST: scale fd row with fd inverse.
+        for j in range(n):  # Use j to indicate column looping.
+            work_matrix[fd][j] *= fdScaler
+            identity_mat_c[fd][j] *= fdScaler
 
-C = np.matmul(A, IM)
-C = np.around(C, decimals=0)
-print C
+        identity_mat_c[identity_mat_c == 0] = 0
+        work_matrix[work_matrix == 0] = 0
+        work_matrix = np.around(work_matrix, decimals=3)
+        identity_mat_c = np.around(identity_mat_c, decimals=3)
+        # SECOND: operate on all rows except fd row.
+        for i in indices[:fd] + indices[fd + 1:]:  # *** skip row with fd in it.
+            crScaler = work_matrix[i][fd]  # cr stands for "current row".
+            for j in range(n):  # cr - crScaler * fdRow, but one element at a time.
+                work_matrix[i][j] = work_matrix[i][j] - crScaler * work_matrix[fd][j]
+                identity_mat_c[i][j] = identity_mat_c[i][j] - crScaler * identity_mat_c[fd][j]
+
+            identity_mat_c[identity_mat_c == 0] = 0
+            work_matrix[work_matrix == 0] = 0
+            work_matrix = np.around(work_matrix, decimals=3)
+            identity_mat_c = np.around(identity_mat_c, decimals=3)
+
+    return identity_mat_c
+
+
+mat = np.array([[5, 4, 3, 2, 1],
+                [4, 3, 2, 1, 5],
+                [3, 2, 9, 5, 4],
+                [2, 1, 5, 4, 3],
+                [1, 2, 3, 4, 5]], dtype=np.float64)
+
+inv = inverse(mat)
+print validate_inverse(mat, inv)
 
 # mat = [[1, 2, 3], [0, 1, 5], [5, 6, 0]]
 
 # mat = np.array([[1, 2, 3], [0, 4, 5], [1, 0, 6]], dtype=np.float64)
 # print determinant_fast(mat)
+# mat = np.array([[3, -2, 4],
+#                 [2, -4, 5],
+#                 [1, 8, 2]], dtype=np.float64)
