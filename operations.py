@@ -7,14 +7,47 @@ identity_mat = np.array([[1, 0, 0, 0, 0],
                          [0, 0, 0, 0, 1]], dtype=np.float64)
 
 
+def get_identity_mat(size=2):
+    identity = np.zeros((size, size), dtype=np.float64)
+    for i in range(size):
+        for j in range(size):
+            if i == j:
+                identity[i, j] = 1
+            else:
+                identity[i, j] = 0
+
+    return identity
+
+
+
+def pseudo_inverse(matrix):
+    c_mat = copy_matrix(matrix)
+    transposed_mat = transpose(c_mat)  # transposing Matrix
+
+    c_transposed_mat = copy_matrix(transposed_mat)
+
+    mul_mat = np.matmul(c_transposed_mat, matrix)  # multiplying transposed mat and original mat
+    # mul_mat = np.matmul(matrix, c_transposed_mat)
+    inverse_mat = inverse(mul_mat)
+
+    pseudo_mat = np.matmul(inverse_mat, transposed_mat)
+    # pseudo_mat = np.matmul(transposed_mat, inverse_mat)
+
+    return round_decimals(pseudo_mat)
+
+
+def round_decimals(matrix):
+    return np.around(matrix, decimals=2)
+
+
 def copy_matrix(matrix):
     return np.copy(matrix)
 
 
-def determinant_fast(A):
+def determinant_fast(mat):
     # Section 1: Establish n parameter and copy A
-    n = len(A)
-    matrix = copy_matrix(A)
+    n = len(mat)
+    matrix = copy_matrix(mat)
     if n == 2:
         return (matrix[0, 0] * matrix[1, 1]) - (matrix[1, 0] * matrix[0, 1])
 
@@ -64,8 +97,9 @@ def validate_inverse(matrix_a, matrix_b):
 
 
 def inverse(matrix):
-    work_matrix = matrix.copy()
-    identity_mat_c = identity_mat.copy()
+    work_matrix = copy_matrix(matrix)
+    identity_mat_c = copy_matrix(get_identity_mat(size=work_matrix.shape[0]))
+
     n = len(work_matrix)
 
     fd = 0  # fd stands for focus diagonal OR the current diagonal
@@ -117,14 +151,33 @@ def inverse(matrix):
     return identity_mat_c
 
 
-mat = np.array([[5, 4, 3, 2, 1],
-                [4, 3, 2, 1, 5],
-                [3, 2, 9, 5, 4],
-                [2, 1, 5, 4, 3],
-                [1, 2, 3, 4, 5]], dtype=np.float64)
+def transpose(matrix):
+    mat = copy_matrix(matrix)
+    transposed_mat = np.zeros((mat.shape[1], mat.shape[0]))
 
-inv = inverse(mat)
-print validate_inverse(mat, inv)
+    for i in range(len(mat)):
+        for j in range(len(mat[0])):
+            transposed_mat[j, i] = mat[i, j]
+
+    return transposed_mat
+
+
+# mat = np.array([[5, 4, 3, 2, 1],
+#                 [4, 3, 2, 1, 5],
+#                 [3, 2, 9, 5, 4],
+#                 [2, 1, 5, 4, 3],
+#                 [1, 2, 3, 4, 5]], dtype=np.float64)
+
+# mat = np.array([[1, 2],
+#                 [3, 4],
+#                 [5, 6]])
+
+mat = np.array([[1, 1, 1, 1],
+                [5, 7, 7, 9]], dtype=np.float64)
+
+print pseudo_inverse(mat)
+# inv = inverse(mat)
+# print validate_inverse(mat, inv)
 
 # mat = [[1, 2, 3], [0, 1, 5], [5, 6, 0]]
 
