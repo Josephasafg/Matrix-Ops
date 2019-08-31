@@ -44,10 +44,10 @@ def copy_matrix(matrix):
     return np.copy(matrix)
 
 
-def determinant_fast(A):
+def determinant_fast(mat):
     # Section 1: Establish n parameter and copy A
-    n = len(A)
-    matrix = copy_matrix(A)
+    n = len(mat)
+    matrix = copy_matrix(mat)
     if n == 2:
         return (matrix[0, 0] * matrix[1, 1]) - (matrix[1, 0] * matrix[0, 1])
 
@@ -174,8 +174,7 @@ def transpose(matrix):
 
 mat = np.array([[1, 1, 1, 1],
                 [5, 7, 7, 9]], dtype=np.float64)
-# print np.linalg.pinv(mat)
-# print
+
 print pseudo_inverse(mat)
 # inv = inverse(mat)
 # print validate_inverse(mat, inv)
