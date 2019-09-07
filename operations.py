@@ -1,4 +1,7 @@
+import math
+
 import numpy as np
+from numpy.linalg import inv
 
 identity_mat = np.array([[1, 0, 0, 0, 0],
                          [0, 1, 0, 0, 0],
@@ -55,7 +58,12 @@ def determinant_fast(mat):
             if matrix[focus_diagonal][focus_diagonal] == 0:
                 matrix[focus_diagonal][focus_diagonal] = 0.0
 
-            scalar = np.float64(matrix[i][focus_diagonal] / matrix[focus_diagonal][focus_diagonal])
+            try:
+                scalar = np.float64(matrix[i][focus_diagonal] / matrix[focus_diagonal][focus_diagonal])
+                if math.isnan(scalar):
+                    scalar = 0
+            except Exception as e:
+                print e
 
             for j in range(n):
                 matrix[i][j] = np.float64(matrix[i][j] - (scalar * matrix[focus_diagonal][j]))
@@ -67,9 +75,27 @@ def determinant_fast(mat):
     return product
 
 
-def get_matrix_minor(m, i, j):
-    result = [row[:j] + row[j + 1:] for row in (m[:i] + m[i + 1:])]
-    return result
+def matrix_minor(matrix, i, j):
+    # Verify parameters.
+
+    if i < 0 or i >= matrix.shape[0]:
+        raise ValueError("Row value %d is out of range" % i)
+    if j < 0 or j >= matrix.shape[1]:
+        raise ValueError("Column value %d is out of range" % j)
+    # Create the output matrix.
+    m = np.zeros((matrix.shape[0] - 1, matrix.shape[1] - 1))
+    # Loop through the matrix, skipping over the row and column specified
+    # by i and j.
+    minor_row = minor_col = 0
+    for self_row in xrange(matrix.shape[0]):
+        if not self_row == i:  # Skip row i.
+            for self_col in xrange(matrix.shape[1]):
+                if not self_col == j:  # Skip column j.
+                    m[(minor_row, minor_col)] = matrix[(self_row, self_col)]
+                    minor_col += 1
+            minor_col = 0
+            minor_row += 1
+    return m
 
 
 def adjoint_matrix(matrix):
@@ -78,7 +104,7 @@ def adjoint_matrix(matrix):
     adj_mat = np.zeros((mat_size, mat_size))
     for i in range(mat_size):
         for j in range(mat_size):
-            co_factor = get_matrix_minor(matrix, i, j)
+            co_factor = matrix_minor(matrix, i, j)
             mat = np.asarray(co_factor, dtype=np.float64)
             adj_mat[i, j] = ((-1) ** (i + j)) * determinant_fast(mat)
 
@@ -93,56 +119,27 @@ def validate_inverse(matrix_a, matrix_b):
 
 
 def inverse(matrix):
-    work_matrix = copy_matrix(matrix)
-    identity_mat_c = copy_matrix(get_identity_mat(size=work_matrix.shape[0]))
+    determinant = determinant_fast(m)
 
-    n = len(work_matrix)
+    if len(matrix) == 2:
+        return [[m[1][1]/determinant, -1 * matrix[0][1]/determinant],
+                [-1*m[1][0]/determinant, matrix[0][0]/determinant]]
 
-    focus_diagonal = 0
-    fdScaler = 1. / work_matrix[focus_diagonal][focus_diagonal]
+    cofactors = []
+    for row in range(len(matrix)):
+        cofactor_row = []
+        for col in range(len(m)):
+            minor = matrix_minor(matrix, row, col)
+            cofactor_row.append(((-1)**(row + col)) * determinant_fast(minor))
 
-    for j in range(n):
-        work_matrix[focus_diagonal][j] = fdScaler * work_matrix[focus_diagonal][j]
-        identity_mat_c[focus_diagonal][j] = fdScaler * identity_mat_c[focus_diagonal][j]
+        cofactors.append(cofactor_row)
+    cofactors = transpose(cofactors)
 
-    work_matrix = np.around(work_matrix, decimals=3)
-    identity_mat_c = np.around(identity_mat_c, decimals=3)
+    for row in range(len(cofactors)):
+        for col in range(len(cofactors)):
+            cofactors[row][col] = cofactors[row][col] / determinant
 
-    n = len(matrix)
-    indices = list(range(n))
-
-    for i in indices[0:focus_diagonal] + indices[focus_diagonal + 1:]:
-        current_row_scalar = work_matrix[i][focus_diagonal]
-        for j in range(n):
-            work_matrix[i][j] = work_matrix[i][j] - current_row_scalar * work_matrix[focus_diagonal][j]
-            identity_mat_c[i][j] = identity_mat_c[i][j] - current_row_scalar * identity_mat_c[focus_diagonal][j]
-
-    work_matrix = np.around(work_matrix, decimals=3)
-    identity_mat_c = np.around(identity_mat_c, decimals=3)
-
-    indices = list(range(n))
-    for fd in range(1, n):
-        fdScaler = 1.0 / work_matrix[fd][fd]
-        for j in range(n):
-            work_matrix[fd][j] *= fdScaler
-            identity_mat_c[fd][j] *= fdScaler
-
-        identity_mat_c[identity_mat_c == 0] = 0
-        work_matrix[work_matrix == 0] = 0
-        work_matrix = np.around(work_matrix, decimals=3)
-        identity_mat_c = np.around(identity_mat_c, decimals=3)
-        for i in indices[:fd] + indices[fd + 1:]:
-            current_row_scalar = work_matrix[i][fd]
-            for j in range(n):
-                work_matrix[i][j] = work_matrix[i][j] - current_row_scalar * work_matrix[fd][j]
-                identity_mat_c[i][j] = identity_mat_c[i][j] - current_row_scalar * identity_mat_c[fd][j]
-
-            identity_mat_c[identity_mat_c == 0] = 0
-            work_matrix[work_matrix == 0] = 0
-            work_matrix = np.around(work_matrix, decimals=3)
-            identity_mat_c = np.around(identity_mat_c, decimals=3)
-
-    return identity_mat_c
+    return cofactors
 
 
 def transpose(matrix):
@@ -162,14 +159,25 @@ def transpose(matrix):
 #                 [2, 1, 5, 4, 3],
 #                 [1, 2, 3, 4, 5]], dtype=np.float64)
 
+
 # mat = np.array([[1, 2],
 #                 [3, 4],
 #                 [5, 6]])
+# mat = np.array([[3, 2, 1, 2],
+#                 [7, 5, 2, 5],
+#                 [0, 0, 9, 4],
+#                 [0, 0, 11, 5]], dtype=np.float64)
 
-mat = np.array([[1, 1, 1, 1],
-                [5, 7, 7, 9]], dtype=np.float64)
+mat = np.array([[2, 5, 7],
+                [6, 3, 4],
+                [5, -2, -3]], dtype=np.float64)
 
-print pseudo_inverse(mat)
+# mat = np.array([[1, 1, 1, 1],
+#                 [5, 7, 7, 9]], dtype=np.float64)
+
+
+m = inverse(mat)
+print m
 # inv = inverse(mat)
 # print validate_inverse(mat, inv)
 
