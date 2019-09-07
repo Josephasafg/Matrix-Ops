@@ -88,7 +88,8 @@ def adjoint_matrix(matrix):
 def validate_inverse(matrix_a, matrix_b):
     validate_mat = np.matmul(matrix_a, matrix_b)
     validate_mat = np.around(validate_mat, decimals=0)
-    return np.equal(validate_mat, identity_mat)
+    return np.equal(validate_mat, get_identity_mat(size=validate_mat.shape[0]))
+    # return np.equal(validate_mat, identity_mat)
 
 
 def inverse(matrix):
@@ -115,6 +116,7 @@ def inverse(matrix):
         for j in range(n):
             work_matrix[i][j] = work_matrix[i][j] - current_row_scalar * work_matrix[focus_diagonal][j]
             identity_mat_c[i][j] = identity_mat_c[i][j] - current_row_scalar * identity_mat_c[focus_diagonal][j]
+
     work_matrix = np.around(work_matrix, decimals=3)
     identity_mat_c = np.around(identity_mat_c, decimals=3)
 
