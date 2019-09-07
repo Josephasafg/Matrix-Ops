@@ -1,7 +1,5 @@
 import math
-
 import numpy as np
-from numpy.linalg import inv
 
 identity_mat = np.array([[1, 0, 0, 0, 0],
                          [0, 1, 0, 0, 0],
