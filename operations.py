@@ -43,6 +43,7 @@ def copy_matrix(matrix):
     return np.copy(matrix)
 
 
+#  By upper triangular calculation
 def determinant_fast(mat):
     if mat.__class__ == np.ndarray:
         if mat.shape[0] != mat.shape[1]:
@@ -54,27 +55,34 @@ def determinant_fast(mat):
         if n == 2:
             return (matrix[0, 0] * matrix[1, 1]) - (matrix[1, 0] * matrix[0, 1])
 
+        sign_change = -1
+        sign_change_amount = 0
         for focus_diagonal in range(n):
             for i in range(focus_diagonal + 1, n):
                 if matrix[focus_diagonal][focus_diagonal] == 0:
-                    matrix[focus_diagonal][focus_diagonal] = 0.0
+                    matrix[[focus_diagonal, focus_diagonal + 1]] = matrix[[focus_diagonal+1, focus_diagonal]]
+                    sign_change_amount += 1
                     continue
 
                 try:
                     scalar = np.float64(matrix[i][focus_diagonal] / matrix[focus_diagonal][focus_diagonal])
+                    print scalar, matrix[i][focus_diagonal], matrix[focus_diagonal][focus_diagonal]
+                    if math.isinf(scalar):
+                        print scalar, matrix[i][focus_diagonal], matrix[focus_diagonal][focus_diagonal]
                     if math.isnan(scalar):
                         scalar = 0
 
                     for j in range(n):
                         matrix[i][j] = np.float64(matrix[i][j] - (scalar * matrix[focus_diagonal][j]))
-                except Exception as e:
-                    print e
+                except Exception:
+                    raise ZeroDivisionError('Cant divide in zero')
 
-        product = 1.0
+        diag_product = 1.0
         for i in range(n):
-            product *= matrix[i][i]
+            diag_product *= matrix[i][i]
 
-        return product
+        sign_change = sign_change ** sign_change_amount
+        return round_decimals(diag_product) * sign_change
     else:
         raise ValueError('Argument must be of type np.ndarray and of nXn size')
 
@@ -176,10 +184,14 @@ def transpose(matrix):
 #                 [3, 2, 9, 5, 4],
 #                 [2, 1, 5, 4, 3],
 #                 [1, 2, 3, 4, 5]], dtype=np.float64)
-
-
-mat = np.array([[2, 5],
-                [1, 3]], dtype=np.float64)
+#
+# mat = np.array([[25, 5, 1],
+#                 [64, 8, 1],
+#                 [144, 12, 1]], dtype=np.float64)
+mat = np.array([[1, 3, 5, 9],
+                [1, 3, 1, 7],
+                [4, 3, 9, 7],
+                [5, 2, 0, 9]], dtype=np.float64)
 # mat = np.array([[2, -3, -1],
 #                 [6, 4, 1],
 #                 [0, 5, 3]], dtype=np.float64)
@@ -195,8 +207,8 @@ mat = np.array([[2, 5],
 # mat = np.array([[1, 1, 1, 1],
 #                 [5, 7, 7, 9]], dtype=np.float64)
 
-
-m = adjoint_matrix(mat)
+# print np.linalg.det(mat)
+m = determinant_fast(mat)
 print m
 # inv = inverse(mat)
 # print validate_inverse(mat, inv)
