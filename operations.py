@@ -18,8 +18,9 @@ def pseudo_inverse(matrix):
     if isinstance(matrix, np.ndarray):
         try:
             c_mat = copy_matrix(matrix)
-            if determinant_fast(c_mat) == 0:
-                return inverse(c_mat)
+            if matrix.shape[0] == matrix.shape[1]:
+                if determinant_fast(c_mat) == 0:
+                    return inverse(c_mat)
 
             transposed_mat = transpose(c_mat)
 
@@ -66,9 +67,6 @@ def determinant_fast(mat):
 
                 try:
                     scalar = np.float64(matrix[i][focus_diagonal] / matrix[focus_diagonal][focus_diagonal])
-                    print scalar, matrix[i][focus_diagonal], matrix[focus_diagonal][focus_diagonal]
-                    if math.isinf(scalar):
-                        print scalar, matrix[i][focus_diagonal], matrix[focus_diagonal][focus_diagonal]
                     if math.isnan(scalar):
                         scalar = 0
 
@@ -179,44 +177,26 @@ def transpose(matrix):
     return transposed_mat
 
 
-# mat = np.array([[5, 4, 3, 2, 1],
-#                 [4, 3, 2, 1, 5],
-#                 [3, 2, 9, 5, 4],
-#                 [2, 1, 5, 4, 3],
-#                 [1, 2, 3, 4, 5]], dtype=np.float64)
-#
-# mat = np.array([[25, 5, 1],
-#                 [64, 8, 1],
-#                 [144, 12, 1]], dtype=np.float64)
-mat = np.array([[1, 3, 5, 9],
-                [1, 3, 1, 7],
-                [4, 3, 9, 7],
-                [5, 2, 0, 9]], dtype=np.float64)
-# mat = np.array([[2, -3, -1],
-#                 [6, 4, 1],
-#                 [0, 5, 3]], dtype=np.float64)
-# mat = np.array([[3, 2, 1, 2],
-#                 [7, 5, 2, 5],
-#                 [0, 0, 9, 4],
-#                 [0, 0, 11, 5]], dtype=np.float64)
+mat = np.array([[5, 4, 3, 2, 1],
+                [4, 3, 2, 1, 5],
+                [3, 2, 9, 5, 4],
+                [2, 1, 5, 4, 3],
+                [1, 2, 3, 4, 5]], dtype=np.float64)
 
-# mat = np.array([[2, 5, 7],
-#                 [6, 3, 4],
-#                 [5, -2, -3]], dtype=np.float64)
 
-# mat = np.array([[1, 1, 1, 1],
-#                 [5, 7, 7, 9]], dtype=np.float64)
+# Non square matrix
+# mat = np.array([[1, 3, 5],
+#                 [1, 3, 1],
+#                 [4, 3, 9],
+#                 [5, 2, 0]], dtype=np.float64)
 
-# print np.linalg.det(mat)
-m = determinant_fast(mat)
-print m
-# inv = inverse(mat)
-# print validate_inverse(mat, inv)
+print 'Determinant is:\n {}'.format(determinant_fast(mat))
+print
+print 'Adjoint Matrix is:\n {}'.format(adjoint_matrix(mat))
+print
+print 'Inverse Matrix is:\n {}'.format(inverse(mat))
+print
+print 'Pseudo-Inverse Matrix is:\n {}'.format(pseudo_inverse(mat))
+print
 
-# mat = [[1, 2, 3], [0, 1, 5], [5, 6, 0]]
 
-# mat = np.array([[1, 2, 3], [0, 4, 5], [1, 0, 6]], dtype=np.float64)
-# print determinant_fast(mat)
-# mat = np.array([[3, -2, 4],
-#                 [2, -4, 5],
-#                 [1, 8, 2]], dtype=np.float64)
