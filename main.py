@@ -1,9 +1,3 @@
-"""Matrix Operation library -
-Students:
-    Joseph Asaf Gardin: 204614911
-    Guy Cohen: 307992958"""
-
-
 import numpy as np
 from operations import determinant_fast, inverse, pseudo_inverse, adjoint_matrix
 
