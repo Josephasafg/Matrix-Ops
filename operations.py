@@ -1,5 +1,7 @@
+# coding=utf-8
 import math
 import numpy as np
+from numpy.linalg import LinAlgError
 
 
 def get_identity_mat(size=2):
@@ -19,21 +21,32 @@ def pseudo_inverse(matrix):
         try:
             c_mat = copy_matrix(matrix)
             if matrix.shape[0] == matrix.shape[1]:
-                if determinant_fast(c_mat) == 0:
+                if determinant_fast(c_mat) != 0:
                     return inverse(c_mat)
 
-            transposed_mat = transpose(c_mat)
+            if is_row_linear_dependant(c_mat):
+                return pseudo_inverse_one(c_mat)
+            else:
+                transposed_mat = transpose(c_mat)
+                c_transposed_mat = copy_matrix(transposed_mat)
+                mul_mat = np.matmul(c_transposed_mat, matrix)
+                inverse_mat = inverse(mul_mat)
 
-            c_transposed_mat = copy_matrix(transposed_mat)
-
-            mul_mat = np.matmul(c_transposed_mat, matrix)
-
-            inverse_mat = inverse(mul_mat)
-
-            pseudo_mat = np.matmul(inverse_mat, transposed_mat)
-            return round_decimals(pseudo_mat)
+                pseudo_mat = np.matmul(inverse_mat, transposed_mat)
+                return round_decimals(pseudo_mat)  # We've decided to round the result of the elements for a cleaner
+                # output. Of course it can be removed for a more accurate result
+                # for example -0.09796705 will now be -0.1
         except ValueError as e:
             print e
+
+
+"""if rows of a matrix are linear dependant we use the following formula 𝐴^𝑇*(𝐴^𝑇*𝐴)^(−1) for pseudo inverse"""
+def pseudo_inverse_one(matrix):
+    c_mat = copy_matrix(matrix)
+    transposed_mat = transpose(c_mat)
+    multiplied_mat = np.matmul(transposed_mat, c_mat)
+    inversed_mat = inverse(multiplied_mat)
+    return np.matmul(transposed_mat, inversed_mat)
 
 
 def round_decimals(matrix):
@@ -177,26 +190,12 @@ def transpose(matrix):
     return transposed_mat
 
 
-mat = np.array([[5, 4, 3, 2, 1],
-                [4, 3, 2, 1, 5],
-                [3, 2, 9, 5, 4],
-                [2, 1, 5, 4, 3],
-                [1, 2, 3, 4, 5]], dtype=np.float64)
+def is_row_linear_dependant(matrix):
+    try:
+        row, vectors = np.linalg.eig(matrix.T)
+        if not matrix[row == 0, :].any():
+            return False
+    except LinAlgError:
+        return False
 
-
-# Non square matrix
-# mat = np.array([[1, 3, 5],
-#                 [1, 3, 1],
-#                 [4, 3, 9],
-#                 [5, 2, 0]], dtype=np.float64)
-
-print 'Determinant is:\n {}'.format(determinant_fast(mat))
-print
-print 'Adjoint Matrix is:\n {}'.format(adjoint_matrix(mat))
-print
-print 'Inverse Matrix is:\n {}'.format(inverse(mat))
-print
-print 'Pseudo-Inverse Matrix is:\n {}'.format(pseudo_inverse(mat))
-print
-
-
+    return True
